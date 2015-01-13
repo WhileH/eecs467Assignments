@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <unistd.h>
 #include <math.h>
 #include <sys/select.h>
@@ -19,7 +18,7 @@
 #include "common/timestamp.h"
 #include "math/math_util.h"
 
-#define NUM_SERVOS 4
+#define NUM_SERVOS 6
 
 typedef struct state state_t;
 struct state
@@ -28,11 +27,11 @@ struct state
 
     // LCM
     lcm_t *lcm;
-    const char *command_channel;
+    //const char *command_channel;
     const char *status_channel;
 
     pthread_t status_thread;
-    pthread_t command_thread;
+    //pthread_t command_thread;
 };
 
 
@@ -82,22 +81,27 @@ command_loop (void *user)
     dynamixel_command_list_t cmds;
     cmds.len = NUM_SERVOS;
     cmds.commands = calloc (NUM_SERVOS, sizeof(dynamixel_command_t));
-    int counter = 0;
+
     while (1) {
         // Send LCM commands to arm. Normally, you would update positions, etc,
         // but here, we will just home the arm.
         for (int id = 0; id < NUM_SERVOS; id++) {
-            // home servos slowly
-            cmds.commands[id].utime = utime_now ();
-            cmds.commands[id].position_radians = 0.0;
-            cmds.commands[id].speed = 0.05;
-            cmds.commands[id].max_torque = 0.35;
+            if (getopt_get_bool (state->gopt, "idle")) {
+                cmds.commands[id].utime = utime_now ();
+                cmds.commands[id].position_radians = 0.0;
+                cmds.commands[id].speed = 0.0;
+                cmds.commands[id].max_torque = 0.0;
+            }
+            else {
+                // home servos slowly
+                cmds.commands[id].utime = utime_now ();
+                cmds.commands[id].position_radians = 0.0;
+                cmds.commands[id].speed = 0.05;
+                cmds.commands[id].max_torque = 0.35;
+            }
         }
-        cmds.commands[counter].utime = utime_now ();
-        cmds.commands[counter].position_radians = 0.262;
-        cmds.commands[counter].speed = 0.05;
-        cmds.commands[counter].max_torque = 0.35;
-        dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
+        //dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
+
         usleep (1000000/hz);
     }
 
@@ -126,15 +130,15 @@ main (int argc, char *argv[])
     state_t *state = calloc (1, sizeof(*state));
     state->gopt = gopt;
     state->lcm = lcm_create (NULL);
-    state->command_channel = getopt_get_string (gopt, "command-channel");
+    //state->command_channel = getopt_get_string (gopt, "command-channel");
     state->status_channel = getopt_get_string (gopt, "status-channel");
 
     pthread_create (&state->status_thread, NULL, status_loop, state);
-    pthread_create (&state->command_thread, NULL, command_loop, state);
+    //pthread_create (&state->command_thread, NULL, command_loop, state);
 
     // Probably not needed, given how this operates
     pthread_join (state->status_thread, NULL);
-    pthread_join (state->command_thread, NULL);
+    //pthread_join (state->command_thread, NULL);
 
     lcm_destroy (state->lcm);
     free (state);
