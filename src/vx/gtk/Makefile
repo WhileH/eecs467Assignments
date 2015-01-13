@@ -12,8 +12,8 @@ BIN_VX_DEMO = $(BIN_PATH)/vx_demo
 BIN_VX_ZOO = $(BIN_PATH)/vx_zoo
 BIN_VX_REMOTE_VIEWER = $(BIN_PATH)/vx_remote_viewer
 BIN_VX_SCENE_VIEWER = $(BIN_PATH)/vx_scene_viewer
-
-ALL = $(LIB_VXGTK) $(BIN_VX_DEMO) $(BIN_VX_ZOO) $(BIN_VX_REMOTE_VIEWER) $(BIN_VX_SCENE_VIEWER)
+BIN_VX_TEST = $(BIN_PATH)/vx_test
+ALL = $(LIB_VXGTK) $(BIN_VX_DEMO) $(BIN_VX_ZOO) $(BIN_VX_REMOTE_VIEWER) $(BIN_VX_SCENE_VIEWER) $(BIN_VX_TEST)
 
 all: $(ALL)
 
@@ -22,6 +22,10 @@ $(LIB_VXGTK): $(VXGTK_OBJS) $(LIBDEPS)
 	@ar rc $@ $^
 
 $(BIN_VX_DEMO): vx_demo.o $(LIB_VXGTK) $(LIB_VXGL) $(LIB_VX) $(LIBDEPS)
+	@echo "\t$@"
+	@$(CC) -o $@ $^ $(LDFLAGS)
+
+$(BIN_VX_TEST): vx_test.o $(LIB_VXGTK) $(LIB_VXGL) $(LIB_VX) $(LIBDEPS)
 	@echo "\t$@"
 	@$(CC) -o $@ $^ $(LDFLAGS)
 

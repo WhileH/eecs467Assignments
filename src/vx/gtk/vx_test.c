@@ -38,29 +38,95 @@ typedef struct
 
 static void draw(state_t * state, vx_world_t * world)
 {
-    //draw text
     if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_LEFT, "<<middle,#000000>>Servo 0\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text0");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_LEFT,vt));
+        vx_buffer_add_back(vx_world_get_buffer(world, "grid"),
+                           vxo_grid());
+        vx_buffer_set_draw_order(vx_world_get_buffer(world, "grid"), -100);
+        vx_buffer_swap(vx_world_get_buffer(world, "grid"));
+    }
+
+    // Draw from the vx shape library
+    if (1) {
+        vx_buffer_add_back(vx_world_get_buffer(world, "fixed-cube"),
+                           vxo_chain(vxo_mat_translate3(3.0,0,0),
+                                     vxo_mat_scale3(2,2,2),
+                                     /* vxo_box(vxo_mesh_style(vx_orange)))); */
+                                     vxo_box(vxo_mesh_style_fancy(vx_orange, vx_orange, vx_white, 1.0, 400.0, 2))));
+
+
+        vx_buffer_add_back(vx_world_get_buffer(world, "fixed-cube"),
+                           vxo_chain(vxo_mat_translate3(0,3.0,0),
+                                     vxo_mat_scale3(1,1,1),
+                                     vxo_depth_test(0,
+                                                    vxo_box(vxo_mesh_style_solid(vx_green)))));
+        vx_buffer_swap(vx_world_get_buffer(world, "fixed-cube"));
+    }
+
+    if (1) {
+        float Tr = .2;
+        float amb[] = {0.0,0.0,0.0};
+        float diff[] = {0.0,0.0,0.0};
+        float spec[] = {1.0,1.0,1.0};
+        float specularity = 1.0;
+
+        int type = 2;
+
+        vx_buffer_add_back(vx_world_get_buffer(world, "window"),
+                           vxo_chain(vxo_mat_translate3(0,0,2.5),
+                                     vxo_mat_rotate_y(-M_PI/7),
+                                     vxo_mat_rotate_z(M_PI/5),
+                                     vxo_mat_rotate_x(M_PI/2),
+                                     vxo_mat_scale3(10,10,1),
+                                     vxo_rect(vxo_mesh_style_fancy(amb, diff, spec, Tr, specularity, type),
+                                              vxo_lines_style(vx_black,2))));
+        vx_buffer_swap(vx_world_get_buffer(world, "window"));
+        vx_buffer_set_draw_order(vx_world_get_buffer(world, "window"), 100);
+    }
+
+
+    if (1) {
+        // Draw a custom ellipse:
+        int npoints = 35;
+        float points[npoints*3];
+        for (int i = 0; i < npoints; i++) {
+            float angle = 2*M_PI*i/npoints;
+
+            float x = 5.0f*cosf(angle);
+            float y = 8.0f*sinf(angle);
+            float z = 0.0f;
+
+            points[3*i + 0] = x;
+            points[3*i + 1] = y;
+            points[3*i + 2] = z;
+        }
+
+        vx_buffer_add_back(vx_world_get_buffer(world, "ellipse"), vxo_lines(vx_resc_copyf (points, npoints*3),
+                                                                            npoints, GL_LINE_LOOP,
+                                                                            vxo_lines_style(vx_purple, 1.0f) ));
+        vx_buffer_swap(vx_world_get_buffer(world, "ellipse"));
+    }
+
+    if (1) {
+        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_TOP_RIGHT, "<<right,#0000ff>>Heads Up!\n");
+        vx_buffer_t *vb = vx_world_get_buffer(world, "text");
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_TOP_RIGHT,vt));
         vx_buffer_swap(vb);
     }
-    if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_LEFT, "<<middle,#000000>>Servo 1\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text1");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_LEFT,vt));
-        vx_buffer_swap(vb);
-    }
-    if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 2\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text2");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vt));
-        vx_buffer_swap(vb);
-    }
-    if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_RIGHT, "<<middle,#000000>>Servo 4\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text4");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_RIGHT,vt));
+
+    // Draw a texture
+    if (state->img != NULL){
+        image_u32_t * img = state->img;
+        vx_object_t * o3 = vxo_image_texflags(vx_resc_copyui(img->buf, img->stride*img->height),
+                                              img->width, img->height, img->stride,
+                                              GL_RGBA, VXO_IMAGE_FLIPY,
+                                              VX_TEX_MIN_FILTER | VX_TEX_MAG_FILTER);
+
+        // pack the image into the unit square
+        vx_buffer_t * vb = vx_world_get_buffer(world, "texture");
+        vx_buffer_add_back(vb,vxo_chain(
+                               vxo_mat_scale(1.0/img->height),
+                               vxo_mat_translate3(0, - img->height, 0),
+                                        o3));
         vx_buffer_swap(vb);
     }
 }
@@ -129,7 +195,6 @@ static state_t * state_create()
 
 void * render_loop(void * data)
 {
-    //modify this
     state_t * state = data;
     while(state->running) {
         double rad = (vx_util_mtime() % 5000) * 2* M_PI / 5e3;
