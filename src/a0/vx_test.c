@@ -19,6 +19,8 @@
 #include "imagesource/image_u32.h"
 #include "imagesource/image_util.h"
 
+#define NUM_SERVOS 6
+
 typedef struct
 {
     int running;
@@ -40,27 +42,19 @@ static void draw(state_t * state, vx_world_t * world)
 {
     //draw text
     if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_LEFT, "<<middle,#000000>>Servo 0\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text0");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_LEFT,vt));
-        vx_buffer_swap(vb);
-    }
-    if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_LEFT, "<<middle,#000000>>Servo 1\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text1");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_LEFT,vt));
-        vx_buffer_swap(vb);
-    }
-    if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 2\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text2");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vt));
-        vx_buffer_swap(vb);
-    }
-    if (1) {
-        vx_object_t *vt = vxo_text_create(VXO_TEXT_ANCHOR_RIGHT, "<<middle,#000000>>Servo 4\n");
-        vx_buffer_t *vb = vx_world_get_buffer(world, "text4");
-        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_RIGHT,vt));
+        vx_object_t *vt0 = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 0\n");
+        vx_object_t *vt1 = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 1\n");
+        vx_object_t *vt2 = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 2\n");
+        vx_object_t *vt3 = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 3\n");
+        vx_object_t *vt4 = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 4\n");
+        vx_object_t *vt5 = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle,#000000>>Servo 5\n");
+        vx_buffer_t *vb = vx_world_get_buffer(world, "text");
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(-365,0),vxo_mat_scale(1.0),vt0)));
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(-219,0),vxo_mat_scale(1.0),vt1)));
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(-73,0),vxo_mat_scale(1.0),vt2)));
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(73,0),vxo_mat_scale(1.0),vt3)));
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(219,0),vxo_mat_scale(1.0),vt4)));
+        vx_buffer_add_back(vb, vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(365,0),vxo_mat_scale(1.0),vt5)));
         vx_buffer_swap(vb);
     }
 }
@@ -132,17 +126,24 @@ void * render_loop(void * data)
     //modify this
     state_t * state = data;
     while(state->running) {
-        double rad = (vx_util_mtime() % 5000) * 2* M_PI / 5e3;
-
-        vx_object_t * vo = vxo_chain(vxo_mat_rotate_z(rad),
-                                     vxo_mat_translate2(0,10),
-                                     vxo_box(vxo_mesh_style(vx_blue)));
-
-        vx_buffer_add_back(vx_world_get_buffer(state->world, "rotating-square"), vo);
-        vx_buffer_swap(vx_world_get_buffer(state->world, "rotating-square"));
+        int angle[6] = {-15,30,-45,60,-75,90};
+        int position[6] = {-365,-219,-73,73,219,365};
+        vx_object_t * vo[6];
+        for(int id=0;id<NUM_SERVOS;++id){
+            if(angle[id] < 0){
+                vo[id] = vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(position[id],angle[id]/2-10),vxo_mat_scale2(60,angle[id]),vxo_rect(vxo_mesh_style(vx_red))));
+            }
+            else{
+                 vo[id] = vxo_pix_coords(VX_ORIGIN_CENTER,vxo_chain(vxo_mat_translate2(position[id],angle[id]/2+10),vxo_mat_scale2(60,angle[id]),vxo_rect(vxo_mesh_style(vx_blue))));
+            }
+        }
+        vx_buffer_t *vb = vx_world_get_buffer(state->world, "bar");
+        for (int id=0; id < NUM_SERVOS; ++id) {
+             vx_buffer_add_back(vb, vo[id]);
+        }
+        vx_buffer_swap(vb);
         usleep(5000);
     }
-
     return NULL;
 }
 
@@ -191,7 +192,7 @@ int main(int argc, char ** argv)
         vx_gtk_display_source_t * appwrap = vx_gtk_display_source_create(&state->app);
         GtkWidget * window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
         GtkWidget * canvas = vx_gtk_display_source_get_widget(appwrap);
-        gtk_window_set_default_size (GTK_WINDOW (window), 400, 400);
+        gtk_window_set_default_size (GTK_WINDOW (window), 1024, 576);
         gtk_container_add(GTK_CONTAINER(window), canvas);
         gtk_widget_show (window);
         gtk_widget_show (canvas); // XXX Show all causes errors!
