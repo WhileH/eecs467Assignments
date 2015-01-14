@@ -16,9 +16,8 @@ struct state {
     char     *url; // image_source url
     image_source_t *isrc;
     int fidx;
-
     getopt_t *gopt;
-
+    int isTaking;
     pthread_t runthread;
 
     GtkWidget *window;
@@ -77,16 +76,11 @@ callback_func (GtkWidget *widget, GdkEventKey *event, gpointer callback_data)
             pthread_mutex_unlock(&state->mutex);
             break;
         }
-
-        case GDK_KEY_r:
-        case GDK_KEY_R: {
-            if (state->record_islog != NULL) {
-                fclose(state->record_islog);
-                state->record_islog = NULL;
-                printf("islog recording stopped\n");
-            } else {
-                state->record_islog = fopen("/tmp/isview.islog", "w");
-                printf("islog recording started\n");
+        case GDK_KEY_s:
+        case GDK_KEY_S:{
+            if(state->isTaking == 0){
+                state->record_islog = fopen("pic.ppm","w");
+                state->isTaking = 1;
             }
             break;
         }
@@ -110,18 +104,40 @@ runthread (void *_p)
         int res = isrc->get_frame(isrc, &isdata);
         if (!res) {
             im = image_convert_u8x3(&isdata);
-
-            if (state->record_islog) {
-                write_u64(state->record_islog, 0x17923349ab10ea9aUL);
-                write_u64(state->record_islog, isdata.utime);
-                write_u32(state->record_islog, isdata.ifmt.width);
-                write_u32(state->record_islog, isdata.ifmt.height);
-                int formatlen = strlen(isdata.ifmt.format);
-                write_u32(state->record_islog, formatlen);
-                fwrite(isdata.ifmt.format, 1, formatlen, state->record_islog);
-                write_u32(state->record_islog, isdata.datalen);
-                fwrite(isdata.data, 1, isdata.datalen, state->record_islog);
-                fflush(state->record_islog);
+            /*if (state->record_islog && state->isTaking == 0) {
+              write_u64(state->record_islog, 0x17923349ab10ea9aUL);
+              write_u64(state->record_islog, isdata.utime);
+              write_u32(state->record_islog, isdata.ifmt.width);
+              write_u32(state->record_islog, isdata.ifmt.height);
+              int formatlen = strlen(isdata.ifmt.format);
+              write_u32(state->record_islog, formatlen);
+              fwrite(isdata.ifmt.format, 1, formatlen, state->record_islog);
+              write_u32(state->record_islog, isdata.datalen);
+              fwrite(isdata.data, 1, isdata.datalen, state->record_islog);
+              fflush(state->record_islog);
+              }*/
+            if (state->isTaking == 1){
+                //char str[] = "P6\n";
+                //fwrite(str,1,sizeof(str),state->record_islog);
+                //write_u32(state->record_islog,isdata.ifmt.width);
+                fprintf(state->record_islog,"P6\n");
+                fprintf(state->record_islog,"%d %d\n",isdata.ifmt.width,isdata.ifmt.height);
+                fprintf(state->record_islog,"255\n");
+                int i, j;
+                for(i = 0; i < isdata.ifmt.height; i++)
+                {
+                    for(j = 0; j < isdata.ifmt.width; j++)
+                    {
+                        uint8_t buf[3];
+                        buf[0] = im->buf[i*im->stride + 3*j + 0];
+                        buf[1] = im->buf[i*im->stride + 3*j + 1];
+                        buf[2] = im->buf[i*im->stride + 3*j + 2];
+                        fwrite(buf,1,3,state->record_islog);
+                    }
+                }
+                fclose(state->record_islog);
+                state->record_islog = NULL;
+                state->isTaking = 0;
             }
         }
 
@@ -135,10 +151,10 @@ runthread (void *_p)
             gdk_threads_enter();
 
             GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data((guchar*) im->buf,
-                                                         GDK_COLORSPACE_RGB, 0, 8,
-                                                         im->width, im->height, im->stride,
-                                                         my_gdkpixbufdestroy,
-                                                         NULL);
+                GDK_COLORSPACE_RGB, 0, 8,
+                im->width, im->height, im->stride,
+                my_gdkpixbufdestroy,
+                NULL);
 
 
             gtk_image_set_from_pixbuf(GTK_IMAGE(state->image), pixbuf);
@@ -152,7 +168,7 @@ runthread (void *_p)
         usleep(0);
     }
 
-  error:
+error:
     isrc->stop(isrc);
     printf("exiting\n");
 
@@ -164,7 +180,7 @@ main (int argc, char *argv[] )
 {
     state_t *state = calloc(1, sizeof(*state));
     state->gopt = getopt_create();
-
+    state->isTaking = 0;
     getopt_add_bool(state->gopt, 'h', "--help", 0, "Show this help");
 
     if (!getopt_parse(state->gopt, argc, argv, 0)) {
@@ -207,7 +223,7 @@ main (int argc, char *argv[] )
     gtk_widget_show(state->window);
 
     g_signal_connect(state->window, "key_press_event",
-                     G_CALLBACK(callback_func), state);
+        G_CALLBACK(callback_func), state);
 
     //////////////////////////////////////////////////////////
     state->isrc = image_source_open(state->url);
