@@ -112,6 +112,7 @@ command_loop (void *user)
                 if(counter%2 == 0)
                 {
                     int index = (counter/2) - 1;
+                    if(index<0) { index = 5; }
 
                     cmds.commands[index].utime = utime_now();
                     cmds.commands[index].position_radians = 0.0;
