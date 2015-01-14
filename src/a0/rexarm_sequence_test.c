@@ -82,128 +82,57 @@ command_loop (void *user)
     cmds.len = NUM_SERVOS;
     cmds.commands = calloc (NUM_SERVOS, sizeof(dynamixel_command_t));
 
+    int counter = 0;
+    int first = 1;
+
     while (1) {
-        // Send LCM commands to arm. Normally, you would update positions, etc,
-        // but here, we will just home the arm.
-        for (int id = 0; id < NUM_SERVOS; id++) {
-            if (getopt_get_bool (state->gopt, "idle")) {
+        // home the arm or set it idle
+        if (getopt_get_bool (state->gopt, "idle")) {
+            for (int id = 0; id < NUM_SERVOS; id++) {
                 cmds.commands[id].utime = utime_now ();
                 cmds.commands[id].position_radians = 0.0;
                 cmds.commands[id].speed = 0.0;
                 cmds.commands[id].max_torque = 0.0;
             }
-            else {
+        }
+        else {
+            if(first)
+            {
                 // home servos slowly
-                cmds.commands[id].utime = utime_now ();
-                cmds.commands[id].position_radians = 0.0;
-                cmds.commands[id].speed = 0.05;
-                cmds.commands[id].max_torque = 0.35;
+                for (int id = 0; id < NUM_SERVOS; id++) {
+                    cmds.commands[id].utime = utime_now ();
+                    cmds.commands[id].position_radians = 0.0;
+                    cmds.commands[id].speed = 0.05;
+                    cmds.commands[id].max_torque = 0.35;
+                }
+                first = 0;
+            }
+            else
+            {
+                if(counter%2 == 0)
+                {
+                    int index = (counter/2) - 1;
 
+                    cmds.commands[index].utime = utime_now();
+                    cmds.commands[index].position_radians = 0.0;
+                    cmds.commands[index].speed = 0.05;
+                    cmds.commands[index].max_torque = 0.35;
+                }
+                else
+                {
+                    int index = counter/2;
+
+                    cmds.commands[index].utime = utime_now();
+                    cmds.commands[index].position_radians = 0.26;
+                    cmds.commands[index].speed = 0.05;
+                    cmds.commands[index].max_torque = 0.35;
+                }
+                counter = (counter+1)%12;
             }
         }
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (10000000/hz);
-	
-	//rotate the base 15 degrees
-	cmds.commands[0].utime = utime_now ();
-        cmds.commands[0].position_radians = 0.26;
-        cmds.commands[0].speed = 0.05;
-        cmds.commands[0].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
 
-	//rotate base back to home
-	cmds.commands[0].utime = utime_now ();
-        cmds.commands[0].position_radians = 0.0;
-        cmds.commands[0].speed = 0.05;
-        cmds.commands[0].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate the shoulder 15 degrees
-	cmds.commands[1].utime = utime_now ();
-        cmds.commands[1].position_radians = 0.26;
-        cmds.commands[1].speed = 0.05;
-        cmds.commands[1].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate shoulder back to home
-	cmds.commands[1].utime = utime_now ();
-        cmds.commands[1].position_radians = 0.0;
-        cmds.commands[1].speed = 0.05;
-        cmds.commands[1].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-	
-	//rotate the elbow 15 degrees
-	cmds.commands[2].utime = utime_now ();
-        cmds.commands[2].position_radians = 1.2;
-        cmds.commands[2].speed = 0.1;
-        cmds.commands[2].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate elbow back to home
-	cmds.commands[2].utime = utime_now ();
-        cmds.commands[2].position_radians = 0.0;
-        cmds.commands[2].speed = 0.1;
-        cmds.commands[2].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-	
-	//rotate the wrist join 15 degrees
-	cmds.commands[3].utime = utime_now ();
-        cmds.commands[3].position_radians = 0.26;
-        cmds.commands[3].speed = 0.05;
-        cmds.commands[3].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate wrist joint back to home
-	cmds.commands[3].utime = utime_now ();
-        cmds.commands[3].position_radians = 0.0;
-        cmds.commands[3].speed = 0.05;
-        cmds.commands[3].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate the wrist 15 degrees
-	cmds.commands[4].utime = utime_now ();
-        cmds.commands[4].position_radians = 0.26;
-        cmds.commands[4].speed = 0.05;
-        cmds.commands[4].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate wrist back to home
-	cmds.commands[4].utime = utime_now ();
-        cmds.commands[4].position_radians = 0.0;
-        cmds.commands[4].speed = 0.05;
-        cmds.commands[4].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate the fingers 15 degrees
-	cmds.commands[5].utime = utime_now ();
-        cmds.commands[5].position_radians = 0.26;
-        cmds.commands[5].speed = 0.05;
-        cmds.commands[5].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-
-	//rotate fingers back to home
-	cmds.commands[5].utime = utime_now ();
-        cmds.commands[5].position_radians = 0.0;
-        cmds.commands[5].speed = 0.05;
-        cmds.commands[5].max_torque = 0.35;
-	dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-	usleep (50000000/hz);
-	
-
-        dynamixel_command_list_t_publish (state->lcm, state->command_channel, &cmds);
-
-        usleep (1000000/hz);
+        dynamixel_command_list_t_publish(state->lcm, state->command_channel, &cmds);
+        usleep (50000000/hz);
     }
 
     free (cmds.commands);
