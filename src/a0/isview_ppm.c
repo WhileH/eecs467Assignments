@@ -117,9 +117,6 @@ runthread (void *_p)
               fflush(state->record_islog);
               }*/
             if (state->isTaking == 1){
-                //char str[] = "P6\n";
-                //fwrite(str,1,sizeof(str),state->record_islog);
-                //write_u32(state->record_islog,isdata.ifmt.width);
                 fprintf(state->record_islog,"P6\n");
                 fprintf(state->record_islog,"%d %d\n",isdata.ifmt.width,isdata.ifmt.height);
                 fprintf(state->record_islog,"255\n");
