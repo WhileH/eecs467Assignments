@@ -56,6 +56,7 @@ BIN_EECS467_MAEBOT_VIDEO_TELOP = $(BIN_PATH)/eecs467_maebot_video_telop
 BIN_REXARM_LISTEN = $(BIN_PATH)/rexarm_listening
 BIN_ISVIEW_PPM = $(BIN_PATH)/isview_ppm
 BIN_MAEBOT_MOTOR_TEST = $(BIN_PATH)/maebot_motor_test
+BIN_MAEBOT_MOTOR_GUI = $(BIN_PATH)/maebot_motor_gui
 BIN_VX_LIDAR_SCAN = $(BIN_PATH)/vx_lidar_scan
 
 ALL = $(LIB_EECS467) $(BIN_REXARM_DEBUG_GUI) $(BIN_REXARM_SEQUENCE_TEST) $(BIN_ISVIEW_PPM) $(BIN_MAEBOT_MOTOR_TEST) $(BIN_VX_LIDAR_SCAN)
@@ -67,6 +68,10 @@ $(LIB_EECS467): $(LIBEECS467_OBJS) $(LIBDEPS)
 	@ar rc $@ $(LIBEECS467_OBJS)
 
 $(BIN_REXARM_DEBUG_GUI): rexarm_debug_gui.o $(LIB_EECS467) $(LIBDEPS) $(LIB_VXGTK) $(LIB_VXGL) $(LIB_VX)
+	@echo "\t$@"
+	@$(CC) -o $@ $^ $(LDFLAGS) $(LIB_EECS467)
+
+$(BIN_MAEBOT_MOTOR_GUI): maebot_motor_gui.o $(LIB_EECS467) $(LIBDEPS) $(LIB_VXGTK) $(LIB_VXGL) $(LIB_VX)
 	@echo "\t$@"
 	@$(CC) -o $@ $^ $(LDFLAGS) $(LIB_EECS467)
 
