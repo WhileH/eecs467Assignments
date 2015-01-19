@@ -38,7 +38,7 @@ typedef struct
 
 static void draw(state_t * state, vx_world_t * world)
 {
-	// draw origin
+    // draw origin
     float x1=1, x_1=-1, y1=1, y_1=-1, z0=0, x0=0, y0=0;
     float origin_pts[] = {x0, y_1, z0, x0, y1, z0, x_1, y0, z0, x1, y0, z0};
     int origin_pts_size = 4;
@@ -47,8 +47,27 @@ static void draw(state_t * state, vx_world_t * world)
     vx_buffer_swap(vx_world_get_buffer(world, "origin"));
 
     // make legend
-    vx_buffer_add_back(vx_world_get_buffer(world, "legend"), vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<right, #ff0000,serif>>Legend"));
-    vx_buffer_swap(vx_world_get_buffer(world, "legend"));
+    int lgnd_pts = 2;
+    vx_object_t *lgnd = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle, #000000>> Legend\n");
+    vx_object_t *odm = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle, #000000>> Odometry: \n");
+    float odm_ln[6] = {20, 0, 0, 0, 0, 0};
+    vx_resc_t *odm_verts = vx_resc_copyf(odm_ln, lgnd_pts*3);
+    vx_object_t *imu = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle, #000000>> IMU: \n");
+    float imu_ln[6] = {20, 0, 0, 0, 0, 0};
+    vx_resc_t *imu_verts = vx_resc_copyf(imu_ln, lgnd_pts*3);
+    vx_buffer_t *wrld = vx_world_get_buffer(world, "text");
+    
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(100, 180), vxo_mat_scale(0.8), lgnd)));
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(100, 165), vxo_mat_scale(0.6), odm)));
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(140, 165), vxo_mat_scale(1.0), 
+			     vxo_lines(odm_verts, lgnd_pts, GL_LINES, vxo_points_style(vx_red, 2.0f))))); 
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(117, 150), vxo_mat_scale(0.6), imu)));
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(140, 150), vxo_mat_scale(1.0), 
+			     vxo_lines(imu_verts, lgnd_pts, GL_LINES, vxo_points_style(vx_blue, 2.0f)))));
+    vx_buffer_swap(wrld);
+    
+   
+    
 
     // Draw from the vx shape library
     /*if (1) {
