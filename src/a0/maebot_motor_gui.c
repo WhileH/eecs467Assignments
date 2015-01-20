@@ -29,16 +29,94 @@ typedef struct
 
     vx_world_t * world;
     zhash_t * layers;
-
     pthread_mutex_t mutex; // for accessing the arrays
     pthread_t animate_thread;
 } state_t;
 
+typedef struct
+{
+    float x;
+    float y;
+    float theta;
+} odometry_t;
 
+odometry_t *odometry_data;
+int left_tick_start, right_tick_start;
+
+//function to calculate the distance
+void calc_move(int sL, int sR, int index, FILE*fp){
+	float dtheta, s, alpha;
+    float x_prev = odometry_data[index-1].x;
+    float y_prev = odometry_data[index-1].y;
+    float theta_prev = odometry_data[index-1].theta;
+
+    int sL_i = sL - left_tick_start;
+    int sR_i = sR - right_tick_start;
+    fprintf(fp, "%d %d\n", sL_i, sR_i);
+
+    // increment left and right starting tick
+    left_tick_start = sL;
+    right_tick_start = sR;
+
+    //convert ticks to meters
+    float sL_f = sL_i/4800.0;
+    float sR_f = sR_i/4800.0;
+    fprintf(fp, "%f %f\n", sL_f, sR_f);
+
+    s = (sR_f + sL_f)/2;
+    dtheta = (sR_f - sL_f)/0.08;
+    alpha = dtheta/2;
+    fprintf(fp, "%f %f %f\n", s, dtheta, alpha);
+    odometry_data[index].x = s*(cosf(theta_prev + alpha)) + x_prev;
+    odometry_data[index].y = s*(sinf(theta_prev + alpha)) + y_prev;
+    odometry_data[index].theta = dtheta + theta_prev;
+}
+
+static void get_odometry_data()
+{
+    FILE *fp;
+    odometry_data = calloc(100000, sizeof(odometry_t));
+    fp = fopen("movement_data.txt", "r");
+    if(fp == NULL)
+    {
+        printf("Can't open movement_data.txt!\n");
+        exit(1);
+    }
+    
+    FILE *ofp;
+    ofp = fopen("output.txt", "w");
+    if(ofp == NULL)
+    {
+        printf("Can't open output.txt!\n");
+        exit(1);
+    }
+    
+    int check = fscanf(fp, "%d %d", &left_tick_start, &right_tick_start);
+    if(check != 2) {
+        printf("error reading movement_data.txt\n");
+        exit(1);
+    }
+    int left_tick, right_tick;
+    int index = 0;
+
+    odometry_data[index].x = 0;
+    odometry_data[index].y = 0;
+    odometry_data[index].theta = 0;
+    fprintf(ofp, "%f %f %f\n", odometry_data[index].x, odometry_data[index].y, odometry_data[index].theta);
+    index++;
+
+    while(fscanf(fp, "%d %d", &left_tick, &right_tick) == 2)
+    {
+        calc_move(left_tick, right_tick, index, ofp);
+        fprintf(ofp, "%f %f %f\n\n", odometry_data[index].x, odometry_data[index].y, odometry_data[index].theta);
+        index++;
+    }
+    printf("final index: %d", index);
+}
 
 static void draw(state_t * state, vx_world_t * world)
 {
-	// draw origin
+    // draw origin
     float x1=1, x_1=-1, y1=1, y_1=-1, z0=0, x0=0, y0=0;
     float origin_pts[] = {x0, y_1, z0, x0, y1, z0, x_1, y0, z0, x1, y0, z0};
     int origin_pts_size = 4;
@@ -47,8 +125,27 @@ static void draw(state_t * state, vx_world_t * world)
     vx_buffer_swap(vx_world_get_buffer(world, "origin"));
 
     // make legend
-    vx_buffer_add_back(vx_world_get_buffer(world, "legend"), vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<right, #ff0000,serif>>Legend"));
-    vx_buffer_swap(vx_world_get_buffer(world, "legend"));
+    int lgnd_pts = 2;
+    vx_object_t *lgnd = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle, #000000>> Legend\n");
+    vx_object_t *odm = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle, #000000>> Odometry: \n");
+    float odm_ln[6] = {20, 0, 0, 0, 0, 0};
+    vx_resc_t *odm_verts = vx_resc_copyf(odm_ln, lgnd_pts*3);
+    vx_object_t *imu = vxo_text_create(VXO_TEXT_ANCHOR_CENTER, "<<middle, #000000>> IMU: \n");
+    float imu_ln[6] = {20, 0, 0, 0, 0, 0};
+    vx_resc_t *imu_verts = vx_resc_copyf(imu_ln, lgnd_pts*3);
+    vx_buffer_t *wrld = vx_world_get_buffer(world, "text");
+    
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(100, 180), vxo_mat_scale(0.8), lgnd)));
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(100, 165), vxo_mat_scale(0.6), odm)));
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(140, 165), vxo_mat_scale(1.0), 
+			     vxo_lines(odm_verts, lgnd_pts, GL_LINES, vxo_points_style(vx_red, 2.0f))))); 
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(117, 150), vxo_mat_scale(0.6), imu)));
+    vx_buffer_add_back(wrld, vxo_pix_coords(VX_ORIGIN_CENTER, vxo_chain(vxo_mat_translate2(140, 150), vxo_mat_scale(1.0), 
+			     vxo_lines(imu_verts, lgnd_pts, GL_LINES, vxo_points_style(vx_blue, 2.0f)))));
+    vx_buffer_swap(wrld);
+    
+   
+    
 
     // Draw from the vx shape library
     /*if (1) {
@@ -60,7 +157,7 @@ static void draw(state_t * state, vx_world_t * world)
 
 
         vx_buffer_add_back(vx_world_get_buffer(world, "fixed-cube"),
-                           vxo_chain(vxo_mat_translate3(0,3.0,0),
+                           vxo_chaiwhile (fscanf(ifp, "%s %d", username, &score) == 2) {n(vxo_mat_translate3(0,3.0,0),
                                      vxo_mat_scale3(1,1,1),
                                      vxo_depth_test(0,
                                                     vxo_box(vxo_mesh_style_solid(vx_green)))));
@@ -197,7 +294,6 @@ static state_t * state_create()
     return state;
 }
 
-
 void * render_loop(void * data)
 {
     state_t * state = data;
@@ -218,6 +314,8 @@ void * render_loop(void * data)
 
 int main(int argc, char ** argv)
 {
+    get_odometry_data();
+
     getopt_t *gopt = getopt_create();
     getopt_add_bool   (gopt, 'h', "help", 0, "Show help");
     getopt_add_bool (gopt, '\0', "no-gtk", 0, "Don't show gtk window, only advertise remote connection");
