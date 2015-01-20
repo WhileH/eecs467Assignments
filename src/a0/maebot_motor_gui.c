@@ -216,6 +216,30 @@ static state_t * state_create()
     return state;
 }
 
+/*function to calculate the distance
+void calc_mov(){
+	int sL, sR;
+	float theta, dtheta, theta_0 = 0, alpha = 0, x0 = 0, y0 = 0, x1, y1, s;
+	
+	open the file
+	while( !infile.EOF() ){
+		s = (sR - sL)/2;
+		dtheta = (sR - sL)/0.08;
+		alpha = dtheta/2;
+		x1 = s*(cos(theta_0 + alpha)) + x0;
+		y1 = s*(sin(theta_0 + alpha)) + y0;
+		theta = dtheta + theta_0;
+		
+		//do some things to send it out
+		
+		theta_0 = theta;
+		x0 = x1;
+		y0 = y1;
+			
+	}
+}*/
+
+/*function for getting the distance 
 
 void * render_loop(void * data)
 {
