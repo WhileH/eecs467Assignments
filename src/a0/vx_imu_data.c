@@ -35,12 +35,10 @@ typedef struct
 
 typedef struct
 {
-    int num_ranges;
-    float ranges[500];
-    float thetas[500];
-} lidar_t;
+    
+} imu_t;
 
-lidar_t lidar[4];
+lidar_t imu;
 
 static int calcPointX(float range,float theta,float origin_x){
     //printf("x :%d ", origin_x+cosf(theta)*range);
@@ -53,26 +51,7 @@ static int calcPointY(float range,float theta,float origin_y){
 }
 static void draw(state_t * state, vx_world_t * world)
 {
-    int i,j;
-    float center[8] = {-15,15,-15,-15,15,-15,15,15};
-    vx_buffer_t *buf = vx_world_get_buffer(world, "example-buffer");
-    for (i = 0; i < 4; ++i) {
-        float points[3000];
-        memset(points,0,3000);
-        //printf("plot lidar %d with range %d\n",i,lidar[i].num_ranges);
-        for (j = 0; j < lidar[i].num_ranges; ++j) {
-            points[j*6+0] = center[2*i];
-            points[j*6+1] = center[2*i+1];
-            points[j*6+2] = 0;
-            points[j*6+3] = calcPointX(lidar[i].ranges[j],lidar[i].thetas[j],center[2*i]);
-            points[j*6+4] = calcPointY(lidar[i].ranges[j],lidar[i].thetas[j],center[2*i+1]);
-            points[j*6+5] = 0;
-            //printf("%f %f\n",points[j*6+3],points[j*6+4]);
-        }
-        vx_resc_t *verts = vx_resc_copyf(points, 500*3);
-        vx_buffer_add_back(buf,vxo_lines(verts, 500, GL_LINES, vxo_lines_style(vx_red, 2.0f)));
-    }
-    vx_buffer_swap(buf);
+    
 }
 
 static void display_finished(vx_application_t * app, vx_display_t * disp)
@@ -150,24 +129,7 @@ void get_lidar_data(){
     if(lcm_data_fp == NULL){
         printf("Can't open lcm_data.txt file");
     }
-    int i,j;
-    int num_ranges;
-    for (i = 0; i < 4; ++i) {
-        fscanf(lcm_data_fp,"%d\n",&num_ranges);
-        lidar[i].num_ranges = num_ranges;
-        for (j = 0; j < lidar[i].num_ranges; ++j) {
-            fscanf(lcm_data_fp,"%f %f\n",&(lidar[i].ranges[j]),&(lidar[i].thetas[j]));
-            //printf("%f %f\n",lidar[i].ranges[j],lidar[i].thetas[j]);
-        }
-        //fscanf(lcm_data_fp,"%s\n",tmp1);
-    }
-    fclose(lcm_data_fp);
-    //for (i = 0; i < 4; ++i) {
-    //printf("%d\n",lidar[3].num_ranges);
-    //for (j = 0; j < lidar[3].num_ranges; ++j) {
-    //        printf("%f %f\n",(lidar[3].ranges[j]),(lidar[3].thetas[j]));
-    //}
-    //}
+    
 }
 int main(int argc, char ** argv)
 {

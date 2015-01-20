@@ -120,11 +120,12 @@ sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     if (res)
         printf ("system clear failed\n");
 
-    fprintf (fp_real_data, "utime: %"PRId64"\n", msg->utime);
-    fprintf (fp_real_data, "accel[0, 1, 2]:        %d,\t%d,\t%d\n",
-            msg->accel[0], msg->accel[1], msg->accel[2]);
-    fprintf (fp_real_data, "gyro[0, 1, 2]:         %d,\t%d,\t%d\n",
-            msg->gyro[0], msg->gyro[1], msg->gyro[2]);
+    //fprintf (fp_real_data, "utime: %"PRId64"\n", msg->utime);
+    //fprintf (fp_real_data, "accel[0, 1, 2]:        %d,\t%d,\t%d\n",
+    //        msg->accel[0], msg->accel[1], msg->accel[2]);
+    //fprintf (fp_real_data, "gyro[0, 1, 2]:         %d,\t%d,\t%d\n",
+    //        msg->gyro[0], msg->gyro[1], msg->gyro[2]);
+    fprintf(fp_real_data,"%lld %d %d %d %d %d %d\n",msg->utime,msg->accel[0],msg->accel[1],msg->accel[2],msg->gyro[0],msg->gyro[1],msg->gyro[2]);
 }
 
 static void
@@ -134,10 +135,10 @@ maebot_laser_scan_handler(const lcm_recv_buf_t *rbuf, const char *channel,
     int res = system ("clear");
     if (res)
         printf ("system clear failed\n");
-    
-	fprintf(fp_lcm, "Subscribed to channel: MAEBOT_LASER_SCAN\n");
+	//fprintf(fp_lcm, "Subscribed to channel: MAEBOT_LASER_SCAN\n");
 	int i;
-	fprintf(fp_lcm, "Num Ranges: %d\n", msg->num_ranges);
+	//fprintf(fp_lcm, "Num Ranges: %d\n", msg->num_ranges);
+    fprintf(fp_lcm,"%d\n",msg->num_ranges);
 	for(i = 0; i < msg->num_ranges; i++)
 	{
 		fprintf(fp_lcm, "%f %f\n", msg->ranges[i],msg->thetas[i]);
@@ -203,7 +204,6 @@ main (int argc, char *argv[])
     lcm_t *lcm_lidar = lcm_create (NULL);
 	if(!lcm)
 		return 1;
-    
 	if (pthread_mutex_init (&msg_mutex, NULL)) {
         printf ("msg mutex init failed\n");
         return 1;
@@ -228,7 +228,6 @@ main (int argc, char *argv[])
                                     NULL);
 
     maebot_laser_scan_t_subscribe(lcm_lidar, "MAEBOT_LASER_SCAN", maebot_laser_scan_handler, NULL);
-	
 	pthread_mutex_lock(&run_mutex);
 	running = 1;
 	pthread_mutex_unlock(&run_mutex);
@@ -247,7 +246,7 @@ main (int argc, char *argv[])
         msg.motor_left_speed = MTR_SPD*LEFT_MOTOR_COEFF;
         msg.motor_right_speed = MTR_SPD*RIGHT_MOTOR_COEFF;
         pthread_mutex_unlock (&msg_mutex);
-        usleep(FORWARD2);
+        usleep(FORWARD1);
         //right turn
         pthread_mutex_lock (&msg_mutex);
         msg.motor_left_speed = MTR_TURN_SPD*LEFT_MOTOR_COEFF;
@@ -276,7 +275,7 @@ main (int argc, char *argv[])
         msg.motor_left_speed = MTR_SPD*LEFT_MOTOR_COEFF;
         msg.motor_right_speed = MTR_SPD*RIGHT_MOTOR_COEFF;
         pthread_mutex_unlock (&msg_mutex);
-        usleep(FORWARD3);
+        usleep(FORWARD1);
         //right turn
         pthread_mutex_lock (&msg_mutex);
         msg.motor_left_speed = MTR_TURN_SPD*LEFT_MOTOR_COEFF;
