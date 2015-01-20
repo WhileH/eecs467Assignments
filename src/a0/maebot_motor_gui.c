@@ -239,7 +239,7 @@ void calc_mov(){
 	}
 }*/
 
-/*function for getting the distance 
+/*function for getting the distance */
 
 void * render_loop(void * data)
 {
