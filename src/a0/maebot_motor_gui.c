@@ -294,8 +294,6 @@ static state_t * state_create()
     return state;
 }
 
-/*function for getting the distance */
-
 void * render_loop(void * data)
 {
     state_t * state = data;
