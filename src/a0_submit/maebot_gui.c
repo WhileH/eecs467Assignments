@@ -43,8 +43,8 @@ typedef struct
 typedef struct
 {
     float theta;
-    float v_xr;
-    float v_yr;
+    float v_xtotal;
+    float v_ytotal;
     float px;
     float py;
 } imu_t;
@@ -177,17 +177,17 @@ static void get_odometry_data()
 static void calc_move_acc(int64_t delta_timestamp, int x_acc,int y_acc, int gyro_z, int index)
 {
     imu_data[index].theta = imu_data[index-1].theta + (gyro_z/131.0)*delta_timestamp/1000000.0;
-    //imu_data[index].v_xr = imu_data[index-1].v_xr + (x_acc/16384.0)*delta_timestamp/1000000.0;
+    //imu_data[index].v_xtotal = imu_data[index-1].v_xtotal + (x_acc/16384.0)*delta_timestamp/1000000.0;
     float delta_v_xw = ((x_acc/16384.0)*cosf(imu_data[index].theta) - (y_acc/16384.0)*sinf(imu_data[index].theta))*delta_timestamp/1000000.0;
     float delta_v_yw = ((x_acc/16384.0)*sinf(imu_data[index].theta) + (y_acc/16384.0)*cosf(imu_data[index].theta))*delta_timestamp/1000000.0;
-    imu_data[index].v_xr = imu_data[index-1].v_xr + delta_v_xw;
-    imu_data[index].v_yr = imu_data[index-1].v_yr + delta_v_yw;
-        //float v_xw = imu_data[index].v_xr*cosf(imu_data[index].theta);
-        //float v_yw = imu_data[index].v_xr*sinf(imu_data[index].theta);
+    imu_data[index].v_xtotal = imu_data[index-1].v_xtotal + delta_v_xw;
+    imu_data[index].v_ytotal = imu_data[index-1].v_ytotal + delta_v_yw;
+    //float v_xw = imu_data[index].v_xtotal*cosf(imu_data[index].theta);
+    //float v_yw = imu_data[index].v_xtotal*sinf(imu_data[index].theta);
     //imu_data[index].px = imu_data[index-1].px + v_xw*delta_timestamp/1000000.0;
     //imu_data[index].py = imu_data[index-1].py + v_yw*delta_timestamp/1000000.0;
-    imu_data[index].px = imu_data[index-1].px + imu_data[index].v_xr*delta_timestamp/1000000.0;
-    imu_data[index].py = imu_data[index-1].py + imu_data[index].v_yr*delta_timestamp/1000000.0;
+    imu_data[index].px = imu_data[index-1].px + imu_data[index].v_xtotal*delta_timestamp/1000000.0;
+    imu_data[index].py = imu_data[index-1].py + imu_data[index].v_ytotal*delta_timestamp/1000000.0;
 }
 
 static void get_imu_data()
@@ -213,13 +213,13 @@ static void get_imu_data()
 
     int index = 0;
     imu_data[index].theta = 0;
-    imu_data[index].v_xr = 0;
-    imu_data[index].v_yr = 0;
+    imu_data[index].v_xtotal = 0;
+    imu_data[index].v_ytotal = 0;
     imu_data[index].px = 0;
     imu_data[index].py = 0;
     index++;
 
-    fprintf(ofp, "%"SCNd64" %f %f %f %f\n", 0, imu_data[index].theta, imu_data[index].v_xr, imu_data[index].px, imu_data[index].py);
+    fprintf(ofp, "%"SCNd64" %f %f %f %f\n", 0, imu_data[index].theta, imu_data[index].v_xtotal, imu_data[index].v_ytotal, imu_data[index].px, imu_data[index].py);
     int first = fscanf(fp, "%"SCNd64" %d %d %d %d %d %d", &timestamp, &x_acc, &y_acc, &z_acc, &gyro_x, &gyro_y, &gyro_z);
     if(first != 7)
     {
@@ -231,7 +231,7 @@ static void get_imu_data()
     while(fscanf(fp, "%"SCNd64" %d %d %d %d %d %d", &timestamp, &x_acc, &y_acc, &z_acc, &gyro_x, &gyro_y, &gyro_z) == 7)
     {
         calc_move_acc(timestamp - prev_timestamp, x_acc, y_acc,gyro_z, index);
-        fprintf(ofp, "%"SCNd64" %f %f %f %f\n", (timestamp - prev_timestamp), imu_data[index].theta, imu_data[index].v_xr, imu_data[index].px, imu_data[index].py);
+        fprintf(ofp, "%"SCNd64" %f %f %f %f\n", (timestamp - prev_timestamp), imu_data[index].theta, imu_data[index].v_xtotal, imu_data[index].v_ytotal, imu_data[index].px, imu_data[index].py);
         index++;
         prev_timestamp = timestamp;
     }

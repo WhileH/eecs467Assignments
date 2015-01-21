@@ -43,8 +43,8 @@ typedef struct
 typedef struct
 {
     float theta;
-    float.v_xtotal;
-    float.v_ytotal;
+    float v_xtotal;
+    float v_ytotal;
     float px;
     float py;
 } imu_t;
