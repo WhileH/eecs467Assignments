@@ -103,7 +103,7 @@ command_loop (void *user)
                     cmds.commands[id].utime = utime_now ();
                     cmds.commands[id].position_radians = 0.0;
                     cmds.commands[id].speed = 0.05;
-                    cmds.commands[id].max_torque = 0.35;
+                    cmds.commands[id].max_torque = 0.5;
                 }
                 first = 0;
             }
@@ -117,7 +117,7 @@ command_loop (void *user)
                     cmds.commands[index].utime = utime_now();
                     cmds.commands[index].position_radians = 0.0;
                     cmds.commands[index].speed = 0.05;
-                    cmds.commands[index].max_torque = 0.35;
+                    cmds.commands[index].max_torque = 0.5;
                 }
                 else
                 {
@@ -126,7 +126,7 @@ command_loop (void *user)
                     cmds.commands[index].utime = utime_now();
                     cmds.commands[index].position_radians = 0.26;
                     cmds.commands[index].speed = 0.05;
-                    cmds.commands[index].max_torque = 0.35;
+                    cmds.commands[index].max_torque = 0.5;
                 }
                 counter = (counter+1)%12;
             }
