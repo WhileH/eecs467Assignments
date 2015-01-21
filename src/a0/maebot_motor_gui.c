@@ -293,8 +293,8 @@ static void draw(state_t * state, vx_world_t * world)
                 points[j*6+0] = px*15;
                 points[j*6+1] = py*15;
                 points[j*6+2] = 0;
-                points[j*6+3] = calcPointX(lidar[i].ranges[j]*100,lidar[i].thetas[j],px*15);
-                points[j*6+4] = calcPointY(lidar[i].ranges[j]*100,lidar[i].thetas[j],py*15);
+                points[j*6+3] = calcPointX(lidar[i].ranges[j]*100*0.5,lidar[i].thetas[j],px*15);
+                points[j*6+4] = calcPointY(lidar[i].ranges[j]*100*0.5,lidar[i].thetas[j],py*15);
                 points[j*6+5] = 0;
                 //printf("%f %f\n",points[j*6+3],points[j*6+4]);
             }
